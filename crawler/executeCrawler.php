@@ -23,8 +23,8 @@ function getLinks($html, $page_base){
         // 404 
         if($downloaded_link['STATUS']['http_code'] == 200 && ($downloaded_link != $page_base)){
 
-            echo($downloaded_link['STATUS']['http_code']."<br>");
-            echo($page_base."<br>");
+            //echo($downloaded_link['STATUS']['http_code']."<br>");
+            //echo($page_base."<br>");
             
             array_push($_links,$downloaded_link['STATUS']['url'] );
         }
@@ -163,6 +163,7 @@ function visitLevel0($pages){
         // Guardar página 
         // $wordsSingular
         echo($title_excl);
+        echo($stripPage);
         savePageDB($stripPage, $title_excl, $page);
         visitLevel1($links);
     
