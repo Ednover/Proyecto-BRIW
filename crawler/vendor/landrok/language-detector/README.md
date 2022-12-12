@@ -1,7 +1,7 @@
 LanguageDetector
 ================
 
-[![Build Status](https://travis-ci.org/landrok/language-detector.svg?branch=master)](https://travis-ci.org/landrok/language-detector)
+[![Build Status](https://travis-ci.com/landrok/language-detector.svg?branch=master)](https://travis-ci.com/landrok/language-detector)
 [![Test Coverage](https://codeclimate.com/github/landrok/language-detector/badges/coverage.svg)](https://codeclimate.com/github/landrok/language-detector/coverage)
 [![Code Climate](https://codeclimate.com/github/landrok/language-detector/badges/gpa.svg)](https://codeclimate.com/github/landrok/language-detector)
 
@@ -36,6 +36,7 @@ Features
 - Small code, small footprint
 - N-grams algorithm
 - Supports PHP 5.4, 5.5, 5.6, 7.0, 7.1, 7.2, 7.3, 7.4, 8.0 and HHVM
+  The latest release 1.3.x only supports PHP>=7.2
 
 
 Install

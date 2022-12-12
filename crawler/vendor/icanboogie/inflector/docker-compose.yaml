@@ -1,9 +1,0 @@
----
-version: "3.0"
-services:
-  tests:
-    build: .
-    volumes:
-    - .:/tests:delegated
-    - ~/.composer:/root/.composer
-    working_dir: /tests

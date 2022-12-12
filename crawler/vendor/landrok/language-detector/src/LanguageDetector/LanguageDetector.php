@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types = 1);
+
 /*
  * This file is part of the LanguageDetector package.
  *
@@ -45,7 +47,7 @@ class LanguageDetector
      * @param  string $dir A directory where subsets are.
      * @param  array $languages Language codes to load models for. By default, all languages are loaded.
      */
-    public function __construct($dir = null, array $languages = [])
+    public function __construct(string $dir = null, array $languages = [])
     {
         $datadir = null === $dir
             ? __DIR__ . '/subsets' : rtrim($dir, '/');
@@ -60,20 +62,13 @@ class LanguageDetector
     }
 
     /**
-     * Evaluates that a string matches a language
+     * Evaluate that a string matches a language
      *
-     * @param  string $text
-     * @return \LanguageDetector\LanguageDetector
-     * @throws \InvalidArgumentException if $text is not a string
+     * @throws \TypeError if $text is not a string
      * @api
      */
-    public function evaluate($text): self
+    public function evaluate(string $text): self
     {
-        Assert::string(
-            $text,
-            'Method evaluate() expects a string. Given %s'
-        );
-
         if (empty($text)) {
             return $this;
         }
@@ -96,16 +91,19 @@ class LanguageDetector
      * @return \LanguageDetector\LanguageDetector
      * @api
      */
-    public static function detect($text, array $languages = []): self
+    public static function detect(string $text, array $languages = []): self
     {
-        // All specified models have been loaded
-        $diff = count($languages)
-            ? array_diff(
-                        self::$detector->getLanguages(),
-                        $languages
-                    )
+        // Current loaded models
+        $current = !is_null(self::$detector)
+            ? self::$detector->getLanguages()
             : [];
 
+        // Differential between currently loaded and specified models
+        $diff = count($languages)
+            ? array_diff($current, $languages)
+            : [];
+
+        // Specified models need to be reloaded
         if (is_null(self::$detector) || count($diff)) {
             self::$detector = new self(null, $languages);
         }
@@ -114,9 +112,8 @@ class LanguageDetector
     }
 
     /**
-     * Gets the best scored language
+     * Get the best scored language
      *
-     * @param  string $code
      * @return \LanguageDetector\Language A Language object related to
      *                                    ISO code or best scored one if
      *                                    $code is empty.
@@ -124,7 +121,7 @@ class LanguageDetector
      *                                   Language definition.
      * @api
      */
-    public function getLanguage($code = null): Language
+    public function getLanguage(string $code = null): Language
     {
         if (!count($this->scores)) {
             return new EmptyLanguage();
@@ -179,8 +176,6 @@ class LanguageDetector
 
     /**
      * Get evaluated text
-     *
-     * @return string
      * @api
      */
     public function getText(): string
@@ -190,8 +185,6 @@ class LanguageDetector
 
     /**
      * Get best result when detector is used as a string
-     *
-     * @return string
      */
     public function __toString(): string
     {
@@ -199,10 +192,8 @@ class LanguageDetector
     }
 
     /**
-     * Evaluate probabilities for one language
-     *
-     * @param  array $chunks
-     * @return \Closure An evaluator
+     * Get a callable evaluator that will calculate probabilities 
+     * for one language.
      */
     private function calculate(array $chunks): callable
     {
@@ -220,8 +211,6 @@ class LanguageDetector
 
     /**
      * Chunk a text
-     *
-     * @return array
      */
     private function chunk(): array
     {

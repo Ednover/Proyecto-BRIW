@@ -43,7 +43,10 @@ function detectLanguage($page){
     // $language = $detector->evaluate($page)->getLanguage();
     // return $language; 
     // Prints something like 'en'
-    return \LanguageDetector\LanguageDetector::detect($page);
+    $detector = new LanguageDetector\LanguageDetector();
+
+    $language = $detector->evaluate($page)->getLanguage();
+    return $language;
 }
 function Singular($page, $lang){
     $language = strval($lang);
@@ -134,7 +137,7 @@ function visitLevel1($links){
         // $stripPage = filterHTML($htmlPage);
         $stripPage = rip_tags(mb_strtolower($htmlPage['FILE']));
         $title_excl = rip_tags(return_between($htmlPage['FILE'], "<title>", "</title>",EXCL));
-        $language = detectLanguage($stripPage);
+        //$language = detectLanguage($stripPage);
         // $filterHTML = remove_stop_word($language, $stripPage);
 
         // Singular
@@ -152,7 +155,7 @@ function visitLevel0($pages){
         $links = array_unique(getLinks($htmlPage, $page));
         // $stripPage = filterHTML($htmlPage);
         $stripPage = rip_tags(mb_strtolower($htmlPage['FILE']));
-        $language = detectLanguage($stripPage);
+        //$language = detectLanguage($stripPage);
         // $filterHTML = remove_stop_word($language, $stripPage);
         // Singular
         //$wordsSingular = Singular($stripPage, $language);
