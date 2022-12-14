@@ -33,14 +33,16 @@ if (!empty($p_search)) {
         $url = $spellurl . urlencode($term);
         $spell = file_get_contents($url);
         $spellarray = json_decode($spell, true);
-        
-        $correct = $spellarray["spellcheck"]["correctlySpelled"];
-        if (!$correct && isset($spellarray["spellcheck"]["suggestions"][1]["suggestion"][0]["word"])) {
-            $allok = false;
-            $spellsuggestions[] = $spellarray["spellcheck"]["suggestions"][1]["suggestion"][0]["word"];
-        } else {
-            $spellsuggestions[] = $term;
+        if (isset($spellarray["spellcheck"]["correctlySpelled"])){
+            $correct = $spellarray["spellcheck"]["correctlySpelled"];
+            if (!$correct && isset($spellarray["spellcheck"]["suggestions"][1]["suggestion"][0]["word"])) {
+                $allok = false;
+                $spellsuggestions[] = $spellarray["spellcheck"]["suggestions"][1]["suggestion"][0]["word"];
+            } else {
+                $spellsuggestions[] = $term;
+            }
         }
+        
     }
 
     if (!$allok) {
