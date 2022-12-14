@@ -35,7 +35,7 @@ if (!empty($p_search)) {
         $spellarray = json_decode($spell, true);
         
         $correct = $spellarray["spellcheck"]["correctlySpelled"];
-        if (!$correct) {
+        if (!$correct && isset($spellarray["spellcheck"]["suggestions"][1]["suggestion"][0]["word"])) {
             $allok = false;
             $spellsuggestions[] = $spellarray["spellcheck"]["suggestions"][1]["suggestion"][0]["word"];
         } else {
