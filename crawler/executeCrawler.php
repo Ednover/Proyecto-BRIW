@@ -94,8 +94,6 @@ function visitLevel0($pages){
         $links = array_unique(getLinks($htmlPage, $page));
         $stripPage = rip_tags(mb_strtolower($htmlPage['FILE']));
         $title_excl = rip_tags(return_between($htmlPage['FILE'], "<title>", "</title>",EXCL));
-        echo($title_excl);
-        echo($stripPage);
         savePageDB($stripPage, $title_excl, $page);
         visitLevel1($links);
     
@@ -106,5 +104,6 @@ $file = file_get_contents("links.txt");
 $pages = explode("\n", $file);
 
 visitLevel0($pages);
-echo("Tarea terminada...");
+echo "<script>alert('Indexación con exito')</script>";
+echo "<script>window.location.href = '../index.php'</script>";
 ?>
