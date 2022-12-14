@@ -9,7 +9,7 @@
 </head>
     <body>
         <div class="container">
-            <br><h2>URLs del crawler</h2>
+            <br><h2>URLs para indexar</h2>
             <form enctype="multipart/form-data" method="post" action="./crawler/executeCrawler.php">
                 <textarea class="form-control" name="urlscontent" id="urls" cols="50" rows="10"><?php
                         $dir = $_SERVER["DOCUMENT_ROOT"] . "/crawler/links.txt";
@@ -18,7 +18,7 @@
                         echo $content;
                         fclose($fp);
                     ?></textarea><br>
-                <input type="submit" class="btn btn-primary" name="SubmitFile" value="Actualizar URLs">
+                <input type="submit" class="btn btn-primary" name="SubmitFile" value="Realizar Crawling">
                 <button type="button" class="btn btn-dark" onclick="location.href='./index.php'">Regresar</button>
             </form>
         </div>
