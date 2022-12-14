@@ -15,8 +15,6 @@ $paginationresult = "";
 $similarresults = "";
 $baseurl = "http://localhost:8983/solr/briwtest/query?rows=".$rows."&fl=*%2Cscore&q=";
 $spellurl = "http://localhost:8983/solr/briwtest/spell?q=body_es:";
-#$baseurl = "http://localhost:8983/solr/nutch/query?rows=".$rows."&fl=*%2Cscore&q=";
-#$spellurl = "http://localhost:8983/solr/nutch/spell?q=body_es:";
 
 if (!empty($p_qop)) {
     $qop = $p_qop;
