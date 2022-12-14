@@ -67,7 +67,7 @@ function savePageDB($body, $title, $url){
     $data = array(array("body_es" => $body, "snippet" => $snippet, "titulo_es" => $title, "link" => $url));                                                                    
     $data_string = json_encode($data);
     
-    $ch = curl_init('http://localhost:8983/solr/briwtest/update?commitWithin=1000&overwrite=true&wt=json');                                                                      
+    $ch = curl_init('http://localhost:8983/solr/briwsolr/update?commitWithin=1000&overwrite=true&wt=json');                                                                      
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
     curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
