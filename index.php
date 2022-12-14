@@ -4,12 +4,19 @@ header("Access-Control-Allow-Origin: *");
 
 extract($_GET, EXTR_PREFIX_ALL, "p");
 
-$output = "";
-$spelling = "";
-#$baseurl = 'http://localhost:8983/briwtest/nutch/query?q=';
-$baseurl = 'http://localhost:8983/solr/briwtest/query?rows=100&fl=*%2Cscore&q=';
-$spellurl = "http://localhost:8983/solr/briwtest/spell?q=body_es:";
 $qop = "OR";
+$start = 0;
+$rows = 10;
+
+$searchresults = "";
+$totalsearchresults = "";
+$spellingresults = "";
+$paginationresult = "";
+$similarresults = "";
+$baseurl = "http://localhost:8983/solr/briwtest/query?rows=".$rows."&fl=*%2Cscore&q=";
+$spellurl = "http://localhost:8983/solr/briwtest/spell?q=body_es:";
+#$baseurl = "http://localhost:8983/solr/nutch/query?rows=".$rows."&fl=*%2Cscore&q=";
+#$spellurl = "http://localhost:8983/solr/nutch/spell?q=body_es:";
 
 if (!empty($p_qop)) {
     $qop = $p_qop;
@@ -18,6 +25,11 @@ if (!empty($p_qop)) {
 if (!empty($p_search)) {
     $p_search = trim($p_search);
     $terms = explode(" ", $p_search);
+    $start = !empty($p_start) ?  $start = intval($p_start) : 0;
+
+    // spelling
+    $spellsuggestions = [];
+    $allok = true;
 
     foreach ($terms as $term) {
         $url = $spellurl . urlencode($term);
@@ -26,55 +38,118 @@ if (!empty($p_search)) {
         
         $correct = $spellarray["spellcheck"]["correctlySpelled"];
         if (!$correct) {
+            $allok = false;
             $spellsuggestions[] = $spellarray["spellcheck"]["suggestions"][1]["suggestion"][0]["word"];
         } else {
             $spellsuggestions[] = $term;
         }
     }
 
-    $spellsuggestions = array_filter($spellsuggestions);
-    if (count($spellsuggestions) > 0) {
-        $spelling = "Quizás quisiste decir: ";
-        $params = $spellsuggestions[0];
+    if (!$allok) {
+        $spellsuggestions = array_filter($spellsuggestions);
+        if (count($spellsuggestions) > 0) {
+            $params = $spellsuggestions[0];
 
-        for ($i = 1; $i < count($spellsuggestions); $i++) {
-            $params .= " " . $spellsuggestions[$i];
+            for ($i = 1; $i < count($spellsuggestions); $i++) {
+                $params .= " " . $spellsuggestions[$i];
+            }
+
+            $protocol = (!empty($_SERVER["HTTPS"]) && (strtolower($_SERVER["HTTPS"]) == "on" || $_SERVER["HTTPS"] == "1")) ? "https://" : "http://";
+            $name = $_SERVER["SERVER_NAME"];
+            $port = $_SERVER["SERVER_PORT"];
+            $correctedurl = "<a href='".$protocol.$name.":".$port."/index.php?search=".$params."&qop=".$qop."'>".$params."</a>";
+            $spellingresults = "Quizás quisiste decir: ".$correctedurl;
         }
-
-        $spelling .= $params;
-        $spelling = "<a href=\"http://localhost:3000/index.php?search=" . $params . "&qop=" . $qop . 
-                    "\">" . $spelling . "</a>";
     }
-    // spell
-
+    
+    // search
     $search = "body_es:" . $terms[0];
     for ($i = 1; $i < count($terms); $i++) {
         $search .= " " . $qop . " body_es:" . $terms[$i];
     }
 
-    $url = $baseurl . urlencode($search);
+    $url = $baseurl . urlencode($search). "&start=". $start;
     $query = file_get_contents($url);
     $array = json_decode($query, true);
     $numFound = $array["response"]["numFound"];
     $maxScore = $array["response"]["maxScore"];
 
     if ($numFound == 0) {
-        $output = "<div><p>No se encontraron resultados :(</p></div>";
+        $searchresults = "<div><p>No se encontraron resultados :(</p></div>";
     } else {
         $documents = $array['response']['docs'];
+        $totalsearchresults = "<p> Se encontraron ".$numFound." resultados. </p>";
 
         foreach($documents as $doc){
             $title = "<h5>".$doc["titulo_es"][0]."</h5>";
             $snippet = "<p class='mb-1'>".$doc["snippet"][0]."</p>"; 
             $link = "<a href='".$doc["link"][0]."'> link </a>";
             $score = "<p class='mb-1 mt-1'>Relevancia ponderada: ".$doc["score"]/$maxScore."</p>";
-            $output .= "<div class='pb-2 pt-2 border-top'>" . $title . $snippet . $link . $score . "</div>";
+            $searchresults .= "<div class='pb-2 pt-2 border-top'>" . $title . $snippet . $link . $score . "</div>";
+        }
+    }
+    
+    // pagination
+    $protocol = (!empty($_SERVER["HTTPS"]) && (strtolower($_SERVER["HTTPS"]) == "on" || $_SERVER["HTTPS"] == "1")) ? "https://" : "http://";
+    $name = $_SERVER["SERVER_NAME"];
+    $port = $_SERVER["SERVER_PORT"];
+    
+    $totalpages = ($numFound % $rows > 0 ) ? intdiv($numFound, $rows) + 1 : intdiv($numFound, $rows);
+    if ($totalpages > 0) {
+        $paginationresult = "Páginas:&nbsp;<ul style='list-style-type: none; padding-left: 0px;'>";
+        $currentpage = intdiv($start, $rows) + 1;
+
+        for ($i = 0; $i < $totalpages; $i++) {
+            $page = $i + 1;
+            $separator = $page < $totalpages ? "&nbsp;-&nbsp;" : "";
+            $target = "";
+            if ($page != $currentpage) {
+                $target = $protocol.$name.":".$port."/index.php?search=".$p_search."&qop=".$qop."&start=".($i * $rows);
+                $target = "<a href='".$target."'>".$page."</a>".$separator;
+            } else {
+                $target = $page.$separator;
+            }
+            $paginationresult .= "<li style='display: inline-block;'>".$target."</li>";
+        }
+        $paginationresult .= "</ul>";
+    }
+
+    // expansion
+    $protocol = (!empty($_SERVER["HTTPS"]) && (strtolower($_SERVER["HTTPS"]) == "on" || $_SERVER["HTTPS"] == "1")) ? "https://" : "http://";
+    $name = $_SERVER["SERVER_NAME"];
+    $port = $_SERVER["SERVER_PORT"];
+
+    $results = [];
+    foreach ($spellsuggestions as $term) {
+        $url = "https://api.datamuse.com/words?sp=".$term."&v=es&max=6";
+        $query = file_get_contents($url);
+        $result = json_decode($query, true);
+        if (!empty($result) && count($result)> 0) {
+            $results[] = $result;
         }
     }
 
+    $params = [];
+
+    $min = PHP_INT_MAX;
+    foreach ($results as $result) $min = min($min, count($result));
+    foreach ($results as $result) $params[] = array_slice($result, 0, $min);
+    if (count($params) > 0) {
+        $similarresults = "Búsquedas similares:<br>";
+        for ($i = 0; $i < count($params[0]); $i++) {
+            $str = "";
+            for ($j = 0; $j < count($params); $j++) {
+                $str .= $params[$j][$i]["word"]. "&nbsp;";
+            }
+            $target = $protocol.$name.":".$port."/index.php?search=".$str."&qop=".$qop."&start=".($i * $rows);
+            $similarresults .= "<a href='".$target."'>".$str."</a><br>";
+        }
+    }
+
+
 } else {
     
-    $output = "<p>Introduzca uno o más términos de consulta</p>";
+    $searchresults = "<p>Introduzca uno o más términos de consulta</p>";
 
 }
 
@@ -102,7 +177,7 @@ if (!empty($p_search)) {
         <form class="input-search row" method="get" action="<?php echo $_SERVER['PHP_SELF'] ?>">
             <div class="row g-2">
                 <div class="col-6 input_container">
-                    <input autocomplete="off" type="search" class="form-control" id="input-search" name="search" onkeyup="autocompletar()" placeholder="<?php if (!empty($p_search)) echo $p_search; else echo "Buscar"; ?>">
+                    <input autocomplete="off" type="search" class="form-control" id="input-search" name="search" onkeyup="autocompletar()" placeholder="Buscar" value="<?php if (!empty($p_search)) echo $p_search; ?>">
                     <ul id="lista_id"></ul>
                 </div>
                 <div class="col-auto">
@@ -122,11 +197,21 @@ if (!empty($p_search)) {
             </div>
         </form>
         <div class="spell mt-2"><?php
-            echo $spelling;
+            echo $spellingresults;
+        ?></div>
+        <div class ="similar-results"><?php
+            echo $similarresults;
+        ?></div>
+        <div class="n-results"><?php 
+            echo $totalsearchresults; 
         ?></div>
         <div class="documents mt-3"><?php
-            echo $output;
+            echo $searchresults;
         ?></div>
+        <div class="pagination"><?php
+            echo $paginationresult;
+        ?></div>
+
         </div>
         <!-- jQuery library -->
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
@@ -134,4 +219,4 @@ if (!empty($p_search)) {
         <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.13.2/themes/smoothness/jquery-ui.css">
         <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
     </body>
-</html-->
+</html>
